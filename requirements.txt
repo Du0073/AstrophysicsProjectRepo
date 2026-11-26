@@ -1,0 +1,19 @@
+# Phase 1 & 2 — Core astrophysics, SQL, analytics, and imaging
+astropy>=6.0
+astroquery>=0.4.7
+pandas>=2.0
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8
+seaborn>=0.13
+pillow>=10.0
+requests>=2.31
+jupyter>=1.0
+pytest>=8.0
+
+# Phase 3 — Tabular ML, astroNN, and custom TensorFlow CNN
+scikit-learn>=1.5
+tensorflow>=2.16
+tf-keras>=2.16
+h5py>=3.10
+astroNN>=1.1

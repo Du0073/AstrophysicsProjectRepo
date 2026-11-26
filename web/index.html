@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDSS Galaxy Morphology &amp; Scaling Relations Atlas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-title-group">
+        <span class="eyebrow">SDSS DR17 · COMPUTATIONAL ASTROPHYSICS · DEEP LEARNING</span>
+        <h1>SDSS Galaxy Morphology &amp; Scaling Relations Atlas</h1>
+        <p class="subtitle">
+          End-to-end extragalactic catalog, multi-band FITS Lupton imaging, and Hubble Sequence morphology classification
+          comparing classical photometric ML, <code>astroNN</code> Bayesian CNN, and custom TensorFlow CNN.
+        </p>
+      </div>
+      <div class="hero-badges" id="hero-meta-badges"></div>
+    </div>
+
+    <section class="kpi-strip" id="kpi-strip"></section>
+
+    <nav class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="tab-explorer" role="tab">Scaling Relations &amp; Inspector</button>
+      <button class="tab-btn" data-tab="tab-gallery" role="tab">Galaxy Images &amp; FITS Showcase</button>
+      <button class="tab-btn" data-tab="tab-models" role="tab">ML &amp; CNN Benchmarks</button>
+      <button class="tab-btn" data-tab="tab-catalog" role="tab">Catalog Explorer &amp; Architecture</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Persistent Cross-Filter Bar -->
+    <section class="filter-bar" id="filter-bar">
+      <div class="filter-group">
+        <label for="filter-morph">Morphology Proxy</label>
+        <select id="filter-morph">
+          <option value="all">All Types</option>
+          <option value="early">Early-Type (fracDeV ≥ 0.5)</option>
+          <option value="late">Late-Type (fracDeV &lt; 0.5)</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-color-pop">Color Population</label>
+        <select id="filter-color-pop">
+          <option value="all">All Populations</option>
+          <option value="red_sequence">Red Sequence</option>
+          <option value="blue_cloud">Blue Cloud</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-hubble">TensorFlow CNN Hubble Class</label>
+        <select id="filter-hubble">
+          <option value="all">All Hubble Classes</option>
+          <option value="Elliptical">Elliptical</option>
+          <option value="Lenticular/Edge-on">Lenticular/Edge-on</option>
+          <option value="Tight Spiral (Sa)">Tight Spiral (Sa)</option>
+          <option value="Medium Spiral (Sb)">Medium Spiral (Sb)</option>
+          <option value="Loose Spiral / Irregular (Sc/Irr)">Loose Spiral / Irregular (Sc/Irr)</option>
+        </select>
+      </div>
+
+      <div class="filter-group slider-group">
+        <label>Max Redshift <span class="mono" id="val-zmax">0.10</span></label>
+        <input type="range" id="filter-zmax" min="0.03" max="0.10" step="0.005" value="0.10" />
+      </div>
+
+      <div class="filter-group slider-group">
+        <label>Min log(M★/M☉) <span class="mono" id="val-mmin">8.5</span></label>
+        <input type="range" id="filter-mmin" min="8.5" max="11.5" step="0.1" value="8.5" />
+      </div>
+
+      <div class="filter-group checkbox-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="filter-has-image" />
+          <span>With RGB Image Only</span>
+        </label>
+      </div>
+
+      <div class="filter-actions">
+        <span class="match-pill" id="filtered-count-pill">Loading...</span>
+        <button class="btn-secondary" id="btn-reset-filters">Reset</button>
+      </div>
+    </section>
+
+    <!-- TAB 1: SCALING RELATIONS & INSPECTOR -->
+    <section class="tab-panel active" id="tab-explorer">
+      <div class="explorer-layout">
+        <div class="charts-column">
+          <div class="chart-grid-2">
+            <article class="card">
+              <div class="card-header">
+                <h3>Color–Magnitude Diagram (g − r vs. M<sub>r</sub>)</h3>
+                <span class="hint">Click any point to inspect galaxy</span>
+              </div>
+              <div id="plot-cmd" class="plot-box"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <h3>Stellar Mass–Size Relation (R<sub>50</sub> vs. log M<sub>★</sub>)</h3>
+                <span class="hint">Includes early/late power-law fits</span>
+              </div>
+              <div id="plot-mass-size" class="plot-box"></div>
+            </article>
+          </div>
+
+          <div class="chart-grid-2">
+            <article class="card">
+              <div class="card-header">
+                <h3>Star-Formation Main Sequence (log SFR vs. log M<sub>★</sub>)</h3>
+                <span class="hint">Quenched Red Sequence vs. Active Disks</span>
+              </div>
+              <div id="plot-sfms" class="plot-box"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <h3>SFR Distribution by Morphology</h3>
+                <span class="hint">Interactive histogram &amp; box comparison</span>
+              </div>
+              <div id="plot-sfr-dist" class="plot-box"></div>
+            </article>
+          </div>
+
+          <div class="chart-grid-2">
+            <article class="card">
+              <div class="card-header">
+                <h3>Morphology &amp; Red/Blue Population Breakdown</h3>
+                <span class="hint">Live cross-filtered counts</span>
+              </div>
+              <div id="plot-morph-breakdown" class="plot-box"></div>
+            </article>
+
+            <article class="card">
+              <div class="card-header">
+                <h3>Pearson Correlation Heatmap</h3>
+                <span class="hint">9 physical &amp; photometric quantities</span>
+              </div>
+              <div id="plot-corr" class="plot-box"></div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Sticky Galaxy Inspector Sidebar -->
+        <aside class="inspector-column">
+          <div class="card inspector-card" id="galaxy-inspector">
+            <div class="inspector-head">
+              <div>
+                <span class="eyebrow">GALAXY INSPECTOR</span>
+                <h3 id="insp-id">Select a Galaxy</h3>
+              </div>
+              <span class="badge" id="insp-morph-badge">—</span>
+            </div>
+
+            <div class="inspector-media">
+              <div class="media-frame" id="insp-image-frame">
+                <img id="insp-img" alt="Selected SDSS galaxy cutout" />
+                <div class="media-placeholder" id="insp-no-img">
+                  No local RGB cutout downloaded for this galaxy yet.<br />
+                  <small>Check "With RGB Image Only" or click a galaxy in the Gallery tab.</small>
+                </div>
+              </div>
+              <div class="media-toggle-row" id="insp-lupton-toggle-row" style="display:none;">
+                <button class="chip active" id="btn-show-rgb">SDSS RGB Cutout</button>
+                <button class="chip" id="btn-show-lupton">FITS Lupton RGB</button>
+              </div>
+            </div>
+
+            <div class="inspector-section">
+              <h4>Physical Parameters</h4>
+              <div class="param-grid" id="insp-params"></div>
+            </div>
+
+            <div class="inspector-section">
+              <h4>Galaxy Zoo Human Consensus</h4>
+              <div id="insp-zoo" class="zoo-bars"></div>
+            </div>
+
+            <div class="inspector-section">
+              <h4>ML &amp; CNN Predictions</h4>
+              <div id="insp-predictions" class="pred-list"></div>
+            </div>
+
+            <div class="inspector-footer">
+              <button class="btn-primary" id="btn-random-imaged">Inspect Random Imaged Galaxy</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- TAB 2: IMAGE GALLERY & FITS SHOWCASE -->
+    <section class="tab-panel" id="tab-gallery">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Calibrated Multi-Band FITS (g, r, i) Showcase: SDSS RGB vs. Astropy Lupton RGB</h3>
+            <p class="card-sub">
+              Each showcase galaxy was extracted from raw SDSS DR17 FITS science frames using <code>astropy.nddata.Cutout2D</code>,
+              cleaned with sigma-clipped sky subtraction and NaN masking, and composited via <code>make_lupton_rgb(i, r, g)</code>.
+            </p>
+          </div>
+        </div>
+        <div class="showcase-grid" id="fits-showcase-grid"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Downloaded SDSS RGB Cutouts Gallery</h3>
+            <p class="card-sub">Click any galaxy cutout to inspect its full physical properties and ML probabilities.</p>
+          </div>
+          <div class="gallery-controls">
+            <span class="mono" id="gallery-page-info"></span>
+            <button class="btn-secondary" id="btn-prev-page">Prev</button>
+            <button class="btn-secondary" id="btn-next-page">Next</button>
+          </div>
+        </div>
+        <div class="cutout-grid" id="rgb-gallery-grid"></div>
+      </article>
+    </section>
+
+    <!-- TAB 3: ML & CNN BENCHMARKS -->
+    <section class="tab-panel" id="tab-models">
+      <div class="model-cards-grid" id="model-summary-cards"></div>
+
+      <div class="chart-grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h3>Model Accuracy &amp; Macro-F1 Comparison</h3>
+            <span class="hint">Tabular baseline vs. astroNN vs. Custom TensorFlow CNN</span>
+          </div>
+          <div id="plot-model-compare" class="plot-box"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h3>Random Forest Photometric Feature Importances</h3>
+            <span class="hint">Trained on physical parameters (excluding fracDeV_r)</span>
+          </div>
+          <div id="plot-rf-importance" class="plot-box"></div>
+        </article>
+      </div>
+
+      <div class="chart-grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h3>CNN Training &amp; Validation Curves</h3>
+            <div class="chip-group">
+              <button class="chip active" data-curve="tf">Custom TensorFlow CNN</button>
+              <button class="chip" data-curve="astronn">astroNN Galaxy10CNN</button>
+            </div>
+          </div>
+          <div id="plot-cnn-curves" class="plot-box"></div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h3>Interactive Confusion Matrix</h3>
+            <div class="chip-group">
+              <button class="chip active" data-cm="tf">TensorFlow CNN</button>
+              <button class="chip" data-cm="astronn">astroNN CNN</button>
+              <button class="chip" data-cm="rf">Random Forest</button>
+            </div>
+          </div>
+          <div id="plot-confusion-matrix" class="plot-box"></div>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="card-header">
+          <h3>Predicted Hubble Sequence Distribution Across Downloaded SDSS Catalog</h3>
+          <span class="hint">Comparing Custom TensorFlow CNN vs. astroNN Galaxy10CNN on our SDSS DR17 cutouts</span>
+        </div>
+        <div id="plot-hubble-dist" class="plot-box"></div>
+      </article>
+    </section>
+
+    <!-- TAB 4: CATALOG EXPLORER & ARCHITECTURE -->
+    <section class="tab-panel" id="tab-catalog">
+      <div class="arch-grid">
+        <article class="card">
+          <span class="eyebrow">PHASE 1</span>
+          <h3>SDSS DR17 SQL &amp; Normalized SQLite</h3>
+          <p>
+            Joins <code>PhotoObj</code>, <code>SpecObj</code>, <code>galSpecExtra</code>, and <code>zooSpec</code> under
+            <code>FlatLambdaCDM(H₀=70, Ωₘ₀=0.3)</code>. Computes physical <code>re_kpc</code> from <code>petroR50_r</code>,
+            concentration <code>R90/R50</code>, <code>M_r</code>, colors, and stores all quantities as unitless SQLite <code>REAL</code>.
+          </p>
+        </article>
+        <article class="card">
+          <span class="eyebrow">PHASE 2</span>
+          <h3>Automated RGB &amp; Multi-Band FITS</h3>
+          <p>
+            Resumable multi-threaded <code>128×128</code> SDSS RGB cutout acquisition plus calibrated <code>g, r, i</code> FITS
+            showcase processing with WCS <code>Cutout2D</code>, NaN masking, sky subtraction, and Lupton arcsinh stretching.
+          </p>
+        </article>
+        <article class="card">
+          <span class="eyebrow">PHASE 3</span>
+          <h3>Dual-Track ML &amp; Deep Learning</h3>
+          <p>
+            Separate classifier folders: <code>classifiers/astronn_and_astroml/</code> (Random Forest + <code>astroNN</code> Bayesian
+            MC-Dropout Galaxy10CNN) and <code>classifiers/tensorflow_cnn/</code> (custom 4-block TensorFlow CNN with 360° augmentation).
+          </p>
+        </article>
+        <article class="card">
+          <span class="eyebrow">PHASE 4</span>
+          <h3>Zero-Backend Interactive Atlas</h3>
+          <p>
+            <code>src/export_dashboard.py</code> exports SQLite <code>v_galaxy_dashboard</code>, predictions, and evaluation metrics
+            to compact JSON/JS consumed directly by this Plotly.js web application with zero backend server required.
+          </p>
+        </article>
+      </div>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Interactive Galaxy Catalog Explorer</h3>
+            <p class="card-sub">Search by SDSS objID or filter using the controls above; click any row to inspect.</p>
+          </div>
+          <div class="table-search-box">
+            <input type="text" id="catalog-search" placeholder="Search objID (e.g. 123764...)" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SDSS objID</th>
+                <th>z</th>
+                <th>M<sub>r</sub></th>
+                <th>g − r</th>
+                <th>log M<sub>★</sub></th>
+                <th>log SFR</th>
+                <th>R<sub>50</sub> [kpc]</th>
+                <th>C</th>
+                <th>Proxy</th>
+                <th>RF Pred</th>
+                <th>TF CNN Hubble</th>
+                <th>Image</th>
+              </tr>
+            </thead>
+            <tbody id="catalog-tbody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>SDSS Galaxy Morphology &amp; Scaling Relations Atlas · Open-Source Computational Astrophysics Pipeline</span>
+    <span class="mono" id="footer-timestamp"></span>
+  </footer>
+
+  <!-- Pre-bundled data script enables instant zero-CORS file:// viewing -->
+  <script src="data/atlas_data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

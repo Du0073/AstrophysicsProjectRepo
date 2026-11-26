@@ -1,0 +1,77 @@
+{
+  "model_name": "rf_photometric_baseline",
+  "model_family": "scikit-learn RandomForest (astroML photometric baseline)",
+  "target_source": "Galaxy Zoo debiased consensus (p >= 0.60)",
+  "features": [
+    "color_gr",
+    "color_ug",
+    "abs_mag_r",
+    "re_kpc",
+    "concentration",
+    "log_stellar_mass",
+    "log_sfr",
+    "redshift"
+  ],
+  "classes": [
+    "Elliptical",
+    "Spiral"
+  ],
+  "n_labeled": 1430,
+  "n_train": 1072,
+  "n_test": 358,
+  "test_accuracy": 0.8799,
+  "macro_f1": 0.8661,
+  "roc_auc": 0.9326,
+  "cv5_accuracy_mean": 0.8762,
+  "cv5_accuracy_std": 0.0201,
+  "gb_benchmark_accuracy": 0.8715,
+  "confusion_matrix": [
+    [
+      100,
+      15
+    ],
+    [
+      28,
+      215
+    ]
+  ],
+  "feature_importances": {
+    "log_sfr": 0.2423,
+    "concentration": 0.1943,
+    "color_ug": 0.1767,
+    "re_kpc": 0.1315,
+    "color_gr": 0.1066,
+    "log_stellar_mass": 0.0629,
+    "abs_mag_r": 0.0553,
+    "redshift": 0.0304
+  },
+  "classification_report": {
+    "Elliptical": {
+      "precision": 0.78125,
+      "recall": 0.8695652173913043,
+      "f1-score": 0.823045267489712,
+      "support": 115.0
+    },
+    "Spiral": {
+      "precision": 0.9347826086956522,
+      "recall": 0.8847736625514403,
+      "f1-score": 0.9090909090909091,
+      "support": 243.0
+    },
+    "accuracy": 0.8798882681564246,
+    "macro avg": {
+      "precision": 0.8580163043478262,
+      "recall": 0.8771694399713723,
+      "f1-score": 0.8660680882903105,
+      "support": 358.0
+    },
+    "weighted avg": {
+      "precision": 0.8854634746174399,
+      "recall": 0.8798882681564246,
+      "f1-score": 0.881450549358681,
+      "support": 358.0
+    }
+  },
+  "evaluated_at": "2026-11-25T15:22:53.973731+00:00",
+  "n_catalog_predicted": 2489
+}

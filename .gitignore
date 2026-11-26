@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SDSS Galaxy Morphology & Scaling Relations Atlas
+.venv/
+data/raw/
+data/processed/
+*.fits
+*.h5
+*.keras
+*.pkl
+__pycache__/
+.ipynb_checkpoints/
+
+
